@@ -73,30 +73,28 @@ def tobs():
     session = Session(engine)
     last_date = session.query(measurement.date).order_by(measurement.date.desc()).first()
     last_date = last_date[0]
-    year, month, day = map(int, last_date.strsplit("-"))
-    year_ago = dt(year, month, day) - timedelta(days=365)
+    year, month, day = map(int, last_date.split("-"))
+    year_ago = dt.date(year, month, day) - dt.timedelta(days=365)
     year_ago = (year_ago.strftime("%Y-%m-%d"))
-    tobs = session.query(measurement.date, measurement.tobs).filter(measurement.date >= year_ago).all()
+    tobs = session.query(measurement.date, measurement.tobs).all()
     session.close()
     return jsonify(tobs)
 
-
+# .filter(measurement.date >= year_ago)
 
 #start only calc
-@app.route("/api.v1.0/<start>")
+@app.route("/api/v1.0/<start>")
 def start_date(start):
     list = []
     session = Session(engine)
-    temp = session.query(measurement.date), func.min(measurement.tobs), func.avg(measurement.tobs), 
-    func.max(measurement.tobs).filter(measurement.date >= start).group_by(measurement.date).all()
+    temp = session.query(func.min(measurement.tobs), func.avg(measurement.tobs),func.max(measurement.tobs)).filter(measurement.date >= start).all()
 
     session.close()
     for data in temp:
         dict = {}
-        dict["Date"] = data[0]
-        dict["Tmin"] = data[1]
-        dict["Tavg"] = round(data[2],2)
-        dict["Tmax"] = data[3]
+        dict["Tmin"] = data[0]
+        dict["Tavg"] = round(data[1],1)
+        dict["Tmax"] = data[2]
         list.append(dict)
 
 
@@ -108,10 +106,10 @@ def start_date(start):
 
 @app.route("/api/v1.0/<start>/<end>")
 def start_end_date(start, end):
+    list=[]
     session = Session(engine)
 
-    temp = session.query(measurement.date), func.min(measurement.tobs), func.avg(measurement.tobs), 
-    func.max(measurement.tobs).filter(measurement.date >= start).group_by(measurement.date).all()
+    temp = session.query(measurement.date, func.min(measurement.tobs), func.avg(measurement.tobs), func.max(measurement.tobs)).filter(measurement.date >= start).filter(measurement.date <= end).group_by(measurement.date).all()
 
     session.close()
     for data in temp:
